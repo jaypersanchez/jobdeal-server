@@ -231,6 +231,39 @@ app.post('/analyze-resume', async (req, res) => {
     }
 });
 
+// Create a new repository
+app.post('/create-repo', async (req, res) => {
+    const { name, description, private = false } = req.body; // Extract name, description, and privacy setting
+
+    try {
+        const response = await fetch('https://api.github.com/user/repos', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name,
+                description,
+                private, // Set to true for private repo, false for public
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('GitHub API error:', response.status, errorData);
+            throw new Error(`GitHub API error: ${response.status} - ${errorData.message}`);
+        }
+
+        const newRepo = await response.json();
+        console.log('New repository created:', newRepo);
+        res.status(201).json(newRepo); // Return the created repository details
+    } catch (error) {
+        console.error('Error creating repository:', error);
+        res.status(500).json({ error: 'Failed to create repository' });
+    }
+});
+
 // Start the server
 app.listen(4000, () => {
   console.log('Server is running at http://localhost:4000/copilotkit');
